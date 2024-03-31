@@ -476,7 +476,7 @@ tra(union ucent *uc)
 	case 007: H = pie; break;	// pie
 	case 010: H = 0; break;		// cache status (0 == no cache)
 	case 011: H = (1 << pil); break;// dpil XXX
-	case 012: H = 0300; break;	// ALD
+	case 012: H = 0400; break;	// ALD
 	case 013: H = 0; break;		// pes
 	case 014: H = mpc+1; break;	// MPC to H
 	case 015: H = 0; break;		// pea
@@ -760,6 +760,12 @@ arith(union ucent *uc)
 	ormap(uc, ucb);
 	aval = areg(ucb, M_A(ucb), pil);
 
+	if (spec3) {
+		if (M_B(ucb) == 017)
+			M_B_W(ucb, IR & 15);
+		tra(ucb);
+		return;
+	}
 	if (spec1) {
 		if (M_B(ucb) == 017)		// BIR3
 			M_B_W(ucb, IR & 15);
@@ -767,11 +773,6 @@ arith(union ucent *uc)
 		return;
 	} else if (spec2) {
 		bval = breg(ucb, pil);	// set bit in bval
-	} else if (spec3) {
-		if (M_B(ucb) == 017)
-			M_B_W(ucb, IR & 15);
-		tra(ucb);
-		return;
 	} else {
 		bval = breg(ucb, pil);
 	}
@@ -1049,7 +1050,12 @@ ioexec(union ucent *uc)
 		ioreg = inchar;
 		break;
 
-	case 0302: ioreg = ttistat; break;	// Read status
+	case 0302:				// Read status
+		if (ifd)
+			sig_io(0);
+		ioreg = ttistat;
+		break;
+
 	case 0303: break;			// Set tti/tto param
 
 	case 0305:
@@ -1090,9 +1096,8 @@ ioexec(union ucent *uc)
 		break;
 
 	default:
-		fprintf(stderr, "ioexec %o: CAR %o ioreg %o addr %o\r\n", mpc, CAR, ioreg, CAR & 03777);
+	//	fprintf(stderr, "ioexec %o: CAR %o ioreg %o addr %o\r\n", mpc, CAR, ioreg, CAR & 03777);
 		int14(IIE_IOX);
-	//	printf("\n"); errx(1, "ioexec %o: CAR %o ioreg %o\n", mpc, CAR, ioreg);
 	}
 }
 
