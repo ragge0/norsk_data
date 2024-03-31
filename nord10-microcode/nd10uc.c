@@ -192,7 +192,7 @@ main(int argc, char *argv[])
 		case 't':
 			if ((tfp = fopen(optarg, "w")) == NULL)
 				err(1, "fopen t");
-	//		tflag = 1;
+			tflag = 1;
 			break;
 
 		case 'd':
@@ -222,6 +222,11 @@ main(int argc, char *argv[])
 	}
 	fclose(fp);
 
+	{
+		fcntl(STDIN_FILENO, F_SETOWN, getpid());
+		int oflags = fcntl(STDIN_FILENO, F_GETFL);
+		fcntl(STDIN_FILENO, F_SETFL, oflags | FASYNC);
+	}
 	signal(SIGIO, sig_io);
 	if (fcntl(sfd, F_SETFL, O_NONBLOCK|O_ASYNC) < 0)
 		err(1, "fcntl");
@@ -459,6 +464,7 @@ tra(union ucent *uc)
 {
 	switch (M_B(uc)) {
 	case 001: H = STS[pil]; break;	// status reg
+	case 002: H = 0;		// OPR
 	case 003: H = 0; break;		// pgs
 	case 004: H = pvl;		// PVL
 	case 005:
@@ -696,7 +702,6 @@ cycles(union ucent *uc, int aval)
 			mpc = 0400 - 1;
 		} else {
 			H = CAR = mem[CP];
-if (IR == 0140134) tflag = 1;
 			oldCP = CP++;
 			if (dfp)
 				dprint();
