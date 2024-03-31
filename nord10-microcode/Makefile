@@ -17,9 +17,6 @@ timing: timing.o
 dismac: dismac.o
 	cc -o dismac dismac.o
 
-timing.o: timing.c
-	cc -Wno-implicit-function-declaration -Wno-implicit-int -Wno-return-type -c timing.c
-
 test: dismac
 	./dismac prom.hex > prom.test1
 	./micmac.awk prom.test1 > prom.test2

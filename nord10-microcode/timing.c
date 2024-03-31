@@ -26,6 +26,19 @@
  * See how the timing signals on Nord10 looks like.
  * Based on the circuits on board 1025.
  */
+#include <stdio.h>
+
+int and(int a, int b);
+int and3(int a, int b, int c);
+int nand(int a, int b);
+int nand3(int a, int b, int c);
+int or4(int a, int b, int c, int d);
+int nor4(int a, int b, int c, int d);
+void mktc(int a2, int a7, int a10);
+int tc0up(void);
+int tc1up(void);
+int tc2up(void);
+void dblupdate(void);
 
 int TC0, TC0_n, TC1, TC1_n, TC2, TC2_n;
 int WT, WT_n, RET3_n, RET5_n;
@@ -33,7 +46,8 @@ int T0, T1, T2, T3, T4, T5, T5_n, T1_n;
 int MIR[32], MIR_n[32];
 int SIR9, CPDEST, DBL, DDBL_n;
 
-main()
+int
+main(int argc, char *argv[])
 {
 	int i;
 	int x_2a2 = 0, x_2a7 = 0, x_2a10 = 0;
@@ -79,6 +93,7 @@ main()
 /*
  * 
  */
+void
 dblupdate()
 {
 	int x_16c6, AT3_n;
@@ -118,6 +133,7 @@ dblupdate()
 /*
  * Called when MIRKL goes one.
  */
+void
 mirupdate()
 {
 	
@@ -150,6 +166,7 @@ tc2up(void)
 	return nor4(a_4c1, a_4c2, a_4c3, T4);
 }
 
+void
 mktc(int a2, int a7, int a10)
 {
 	TC0_n = !a2;
@@ -160,9 +177,9 @@ mktc(int a2, int a7, int a10)
 	TC2_n = !TC2;
 }
 
-and(int a, int b) { return a & b; }
-and3(int a, int b, int c) { return a & b & c; }
-nand(int a, int b) { return !and(a, b); }
-nand3(int a, int b, int c) { return !and3(a, b, c); }
-or4(int a, int b, int c, int d) { return a|b|c|d; }
-nor4(int a, int b, int c, int d) { return !or4(a,b,c,d); }
+int and(int a, int b) { return a & b; }
+int and3(int a, int b, int c) { return a & b & c; }
+int nand(int a, int b) { return !and(a, b); }
+int nand3(int a, int b, int c) { return !and3(a, b, c); }
+int or4(int a, int b, int c, int d) { return a|b|c|d; }
+int nor4(int a, int b, int c, int d) { return !or4(a,b,c,d); }
