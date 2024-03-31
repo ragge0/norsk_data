@@ -22,7 +22,7 @@ timing.o: timing.c
 
 test: dismac
 	./dismac prom.hex > prom.test1
-	./micmac.awk prom.list > prom.test2
+	./micmac.awk prom.test1 > prom.test2
 	@if cmp prom.hex prom.test2 ; then	\
 		echo "files identical";		\
 	fi

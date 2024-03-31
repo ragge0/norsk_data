@@ -32,7 +32,7 @@
  * Reads prom.hex for the 1k microcode.
  * Flags:
  *	-4		reads prom4k.hex instead (commercial microcode)
- *	-t		trace the microcode
+ *	-t <file>	trace the microcode
  *	-h <file> 	attach a punched tape to device 400
  *	-d <file>	write instruction code execution trace to file
  *	-i <file>	Read microcode commands from file first.
@@ -115,7 +115,8 @@ unsigned char STS[16];
 // See 1120 ACKL/BCKL and 1101 74174.
 Reg AC[2];	// 0 == least, 1 == most.
 
-Reg H, R, CAR, IR, PCR;	// 05, 13, 15
+Reg H, R, CAR, PCR;	// 05, 13, 15
+#define	IR CAR	// same reg
 int bZ, bO, bS, bC, bCl;
 
 Reg ioreg;
@@ -512,7 +513,7 @@ trr(union ucent *uc, int aval)
 
 	case 013: CAR = aval; break;
 	case 014:
-		H = CAR = IR = aval;
+		H = CAR = aval;
 		if (dfp)
 			dprint();
 		mpc = epg(IR, 0)-1; // writing to IR resets MPC
@@ -694,7 +695,7 @@ cycles(union ucent *uc, int aval)
 		if (inton && pil != n) {
 			mpc = 0400 - 1;
 		} else {
-			H = CAR = IR = mem[CP];
+			H = CAR = mem[CP];
 if (IR == 0140134) tflag = 1;
 			oldCP = CP++;
 			if (dfp)
