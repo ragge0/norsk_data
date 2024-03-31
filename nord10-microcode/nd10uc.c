@@ -132,7 +132,7 @@ volatile int ttistat = 001;
 int tti_active;
 int sfd;
 char *hname;
-FILE *ifd;
+FILE *ifd, *tfp;
 int promsz = 1024;
 
 /* internal interrupt enable register */
@@ -181,14 +181,18 @@ main(int argc, char *argv[])
 	char *prom = "prom.hex";
 	int i, ch;
 
-	while ((ch = getopt(argc, argv, "4td:h:i:")) != -1) {
+	while ((ch = getopt(argc, argv, "4t:d:h:i:")) != -1) {
 		switch (ch) {
 		case '4':
 			prom = "prom4k.hex";
 			promsz = 4096;
 			break;
 
-		case 't': tflag = 1; break;
+		case 't':
+			if ((tfp = fopen(optarg, "w")) == NULL)
+				err(1, "fopen t");
+	//		tflag = 1;
+			break;
 
 		case 'd':
 			if ((dfp = fopen(optarg, "w")) == NULL)
@@ -232,7 +236,7 @@ main(int argc, char *argv[])
 
 		uc = &rom[mpc];
 		if (tflag)
-			printf("%04o: %08X", mpc, uc->line);
+			fprintf(tfp, "%04o: %08X", mpc, uc->line);
 		switch (M_OP(uc)) {
 		case 0:
 			arith(uc);
@@ -245,7 +249,7 @@ main(int argc, char *argv[])
 		case 2:
 			jump(uc);
 			if (tflag)
-				printf("\r\n");
+				fprintf(tfp, "\n");
 			continue;
 
 		case 3: // LOOP
@@ -257,7 +261,7 @@ main(int argc, char *argv[])
 		}
 		mpc++;
 		if (tflag)
-			printf("\r\n");
+			fprintf(tfp, "\n");
 	}
 
 	return 0;
@@ -293,13 +297,14 @@ int xintr = intr;
 static void
 dprint()
 {
-	if (wrtout == 0)
-		return;
+//	if (wrtout == 0)
+//		return;
 	fprintf(dfp, "%06o: IR=%06o STS=%06o D=%06o B=%06o "
 	    "L=%06o A=%06o T=%06o X=%06o\n",
 	    oldCP, IR, STS[pil] + (pil << 8) + (inton << 15),
 	    D[pil], B[pil], L[pil], A[pil], T[pil], X[pil]);
 	fprintf(dfp, "N: %d\n", rtc_ctr);
+	fflush(dfp);
 }
 
 
@@ -399,7 +404,7 @@ areg(union ucent *uc, int regno, int lvl)
 	case 017: rv = S2[lvl]; break;	// Scratch II
 	}
 	if (tflag)
-		printf(" %s%02o(A)=%06o", anames[regno], lvl, rv);
+		fprintf(tfp, " %s%02o(A)=%06o", anames[regno], lvl, rv);
 
 	Alatch[M_ARSEL(uc)] = rv;
 	return rv;
@@ -443,7 +448,7 @@ breg(union ucent *uc, int lvl)
 		errx(1, "arith b 0%o not implemented: %08X line %o", M_B(uc), uc->line, mpc); }
 	}
 	if (tflag)
-		printf(" B=%06o", rv);
+		fprintf(tfp, " B=%06o", rv);
 	return rv; // XXX
 }
 
@@ -537,7 +542,7 @@ static void
 setdreg(union ucent *uc, int dval, int lvl)
 {
 	if (tflag)
-		printf(": D=%06o in %s%02o", dval, dnames[M_DEST(uc)], lvl);
+		fprintf(tfp, ": D=%06o in %s%02o", dval, dnames[M_DEST(uc)], lvl);
 	switch (M_DEST(uc)) {
 	case 001: D[lvl] = dval; break;		// D
 	case 002: CP = dval; break;		// Current P
@@ -672,7 +677,7 @@ cycles(union ucent *uc, int aval)
 	if (M_CYCLE(uc) == 0)
 		return;
 	if (tflag)
-		printf(" cycle in adr %o ", mem[052744]);
+		fprintf(tfp, " cycle in adr %o ", mem[052744]);
 
 	switch (M_CYCLE(uc)) {
 	case 01:				// CEATR
@@ -690,6 +695,7 @@ cycles(union ucent *uc, int aval)
 			mpc = 0400 - 1;
 		} else {
 			H = CAR = IR = mem[CP];
+if (IR == 0140134) tflag = 1;
 			oldCP = CP++;
 			if (dfp)
 				dprint();
@@ -728,7 +734,7 @@ cycles(union ucent *uc, int aval)
 	default: ;
 	}
 	if (tflag)
-		printf(" cycle %o R=%o adr %o ", M_CYCLE(uc), R, mem[052744]);
+		fprintf(tfp, " cycle %o R=%o adr %o ", M_CYCLE(uc), R, mem[052744]);
 }
 
 void
@@ -857,7 +863,7 @@ jump(union ucent *uc)
 	else
 		mpc++;
 	if (tflag)
-		printf(" %sJMP to %o", M_JCOND(uc) ? "C" : "", mpc);
+		fprintf(tfp, " %sJMP to %o", M_JCOND(uc) ? "C" : "", mpc);
 }
 
 /*
@@ -1008,7 +1014,7 @@ ioexec(union ucent *uc)
 	char inchar;
 
 	if (tflag)
-		printf(" iox %o", CAR & 03777);
+		fprintf(tfp, " iox %o", CAR & 03777);
 	switch (CAR & 03777) {
 	case 0011: // clear counter
 		rtc_ctr = 10000; // something

@@ -1,6 +1,7 @@
 #
 #
 OBJS=testepg.o epg.o nd10uc.o timing.o dismac.o
+CFLAGS=-g
 
 ALL: epgtest nd10uc timing dismac
 
