@@ -195,3 +195,37 @@
 # pl11	HARD	0000011	IDARG
 # pl12	HARD	0000022	IDARG
 # pl13	HARD	0000043	IDARG
+## Extended byte operations
+# bfill	HARD	0140130	NOARG
+# movb	HARD	0140131	NOARG
+# movbf	HARD	0140132	NOARG
+## Physical memory read/write
+# ldatx	HARD	0143300	PMRW
+# ldxtx	HARD	0143301	PMRW
+# lddtx	HARD	0143302	PMRW
+# ldbtx	HARD	0143303	PMRW
+# statx	HARD	0143304	PMRW
+# stztx	HARD	0143305	PMRW
+# stdtx	HARD	0143306	PMRW
+## Decimal instructions
+# addd	HARD	0140120	NOARG
+# subd	HARD	0140121	NOARG
+# comd	HARD	0140122	NOARG
+# pack	HARD	0140124	NOARG
+# upack	HARD	0140125	NOARG
+# shde	HARD	0140126	NOARG
+## Stack instructions
+# init	HARD	0140134	NOARG
+# entr	HARD	0140135	NOARG
+# leave	HARD	0140136	NOARG
+# eleav	HARD	0140137	NOARG
+## Other instructions
+# movew	HARD	0143100	MOVEW
+# tset	HARD	0140123	NOARG
+# rdus	HARD	0140127	NOARG
+## Sintran III Segment Change Instructions
+# setpt	HARD	0140300	NOARG
+# clept	HARD	0140301	NOARG
+# clnreent	HARD	0140302	NOARG
+# chreentpages	HARD	0140303	NOARG
+# clepu	HARD	0140304	NOARG

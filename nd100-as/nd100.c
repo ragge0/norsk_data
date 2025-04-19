@@ -32,7 +32,8 @@
 
 enum { A_EA = 1, A_NOARG, A_ROP, A_ROPARG, A_ROPREG,
 	A_SHFT, A_SHFTARG, A_SHFTR, A_FCONV, A_OFF,
-	A_SKP, A_SKPARG, A_IDENT, A_IDARG, A_IOX };
+	A_SKP, A_SKPARG, A_IDENT, A_IDARG, A_IOX,
+	A_PMRW, A_MOVEW  };
 
 #define OPC(x,y,z)	{ HDRNAM(x), y, z },
 struct insn insn[] = {
@@ -220,11 +221,22 @@ badid:			error("bad ident level");
 		break;
 
 	case A_IOX:
-		w = absval(p1_rdexpr()) & 03777;
+		w = absval(p1_rdexpr());
+		if (w > 03777 || w < 0)
+			error("device address out of bounds");
+		break;
+
+	case A_MOVEW:
+	case A_PMRW:
+		w = absval(p1_rdexpr());
+		if (w > 7 || w < 0)
+			error("argument out of bounds");
+		if (ir->class == A_PMRW)
+			w <<= 3; /* delta is in bit 3-5 */
 		break;
 
 	default:
-		error("bad instruction class %d", ir->class);
+		error("p1: bad instruction class %d", ir->class);
 		w = 0;
 	}
 		
@@ -353,6 +365,8 @@ p2_instr(struct insn *in)
 	case A_NOARG:
 		break;
 
+	case A_MOVEW:
+	case A_PMRW:
 	case A_IOX:
 	case A_IDENT:
 	case A_FCONV:
