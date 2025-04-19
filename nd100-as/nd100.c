@@ -32,7 +32,7 @@
 
 enum { A_EA = 1, A_NOARG, A_ROP, A_ROPARG, A_ROPREG,
 	A_SHFT, A_SHFTARG, A_SHFTR, A_FCONV, A_OFF,
-	A_SKP, A_SKPARG };
+	A_SKP, A_SKPARG, A_IDENT, A_IDARG, A_IOX };
 
 #define OPC(x,y,z)	{ HDRNAM(x), y, z },
 struct insn insn[] = {
@@ -175,6 +175,7 @@ skparg(void)
 void
 p1_instr(struct insn *ir)
 {
+	struct insn *ar;
 	struct expr *e;
 	int w = 0;
 
@@ -184,6 +185,15 @@ p1_instr(struct insn *ir)
 		e = p1_rdexpr();
 		break;
 
+	case A_IDENT:
+		if (tok_get() != INSTR)
+badid:			error("bad ident level");
+		ar = (void *)yylval.hdr;
+		if (ar->class != A_IDARG)
+			goto badid;
+		w |= ar->opcode;
+		break;
+		
 	case A_NOARG:
 		break;
 
@@ -207,6 +217,10 @@ p1_instr(struct insn *ir)
 
 	case A_SKP:
 		w = skparg();
+		break;
+
+	case A_IOX:
+		w = absval(p1_rdexpr()) & 03777;
 		break;
 
 	default:
@@ -339,6 +353,8 @@ p2_instr(struct insn *in)
 	case A_NOARG:
 		break;
 
+	case A_IOX:
+	case A_IDENT:
 	case A_FCONV:
 	case A_SHFT:
 	case A_ROP:
