@@ -38,9 +38,9 @@ static void setfn(int);
 
 char *ofile, *cinfile;
 char **argvp;
-FILE *ofd;
+FILE *ofd, *mapfd;
 int errval, pass;
-int tdebug, wdebug, sdebug, edebug, gdebug, odebug, uflag;
+int tdebug, wdebug, sdebug, edebug, gdebug, odebug, uflag, mapflag;
 extern int lineno;
 
 #ifndef md_big_endian
@@ -57,8 +57,15 @@ main(int argc, char *argv[])
 
 	argvp = argv;
 
-	while ((ch = getopt(argc, argv, "um:o:D:")) != -1) {
+	while ((ch = getopt(argc, argv, "um:o:D:a:")) != -1) {
 		switch (ch) {
+		case 'a':
+			for (ch = 0; optarg[ch]; ch++) {
+				if (optarg[ch] == 'm')
+					mapflag = 1;
+			}
+			break;
+
 		case 'D': /* debug */
 			for (ch = 0; optarg[ch]; ch++) {
 				if (optarg[ch] == 't')
@@ -106,6 +113,17 @@ main(int argc, char *argv[])
 
 	p1_setseg(".text", 0);	/* Initial segment */
 
+	/* Create a .map file of output file */
+	if (mapflag) {
+		char *c, *fn = xmalloc(strlen(ofile) + 5); /* .map + \0 == 5 */
+		strcpy(fn, ofile);
+		if ((c = strrchr(fn, '.')) != 0)
+			*c = 0;
+		strcat(fn, ".map");
+		if ((mapfd = fopen(fn, "w")) == NULL)
+			err(1, "fopen %s", fn);
+	}
+
 	if ((ofd = fopen(ofile, "w")) == NULL)
 		err(1, "fopen %s", ofile);
 
@@ -133,6 +151,8 @@ main(int argc, char *argv[])
 	pass = 2;
 	owrite();
 
+	if (mapflag)
+		fclose(mapfd);
 	fclose(ofd);
 	if (errval)
 		unlink(ofile);

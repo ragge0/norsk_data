@@ -68,6 +68,9 @@ owrite()
 
 		case LINENO:
 			lineno = tmprd();
+			if (mapflag)
+				fprintf(mapfd, "%s:%d -> %06o\n",
+				    cinfile, lineno, cdot);
 			break;
 
 		case FILENM:

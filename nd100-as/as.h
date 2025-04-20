@@ -293,8 +293,8 @@ void tok_unput(int);
 void tok_acpt(int);
 
 /* as.c */
-extern FILE *ofd;
-extern int tdebug, wdebug, sdebug, edebug, gdebug, odebug, uflag;
+extern FILE *ofd, *mapfd;
+extern int tdebug, wdebug, sdebug, edebug, gdebug, odebug, uflag, mapflag;
 extern int lineno, pass, infile;
 void error(char *s, ...);
 void aerror(char *s, ...);
