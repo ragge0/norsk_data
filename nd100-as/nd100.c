@@ -30,10 +30,10 @@
 
 #include "as.h"
 
-enum { A_EA = 1, A_NOARG, A_ROP, A_ROPARG, A_ROPREG,
+enum { A_EA = 1, A_NOARG, A_ROP, A_ROPARG, A_ROPSREG, A_ROPDREG,
 	A_SHFT, A_SHFTARG, A_SHFTR, A_FCONV, A_OFF,
 	A_SKP, A_SKPARG, A_IDENT, A_IDARG, A_IOX,
-	A_PMRW, A_MOVEW  };
+	A_PMRW, A_MOVEW, A_BSKP, A_BSKPARG, A_OBA  };
 
 #define OPC(x,y,z)	{ HDRNAM(x), y, z },
 struct insn insn[] = {
@@ -104,16 +104,31 @@ roparg(void)
 	tok_unget(n);
 	return w;
 }
-	
+
 static int
-ropreg(void)
+ropsreg(void)
 {
 	struct insn *ar;
 	int n;
 
 	if ((n = tok_get()) == INSTR) {
 		ar = (void *)yylval.hdr;
-		if (ar->class == A_ROPREG)
+		if (ar->class == A_ROPSREG)
+			return ar->opcode;
+	}
+	tok_unget(n);
+	return 0;
+}
+	
+static int
+ropdreg(void)
+{
+	struct insn *ar;
+	int n;
+
+	if ((n = tok_get()) == INSTR) {
+		ar = (void *)yylval.hdr;
+		if (ar->class == A_ROPDREG)
 			return ar->opcode;
 	}
 	tok_unget(n);
@@ -158,14 +173,14 @@ skparg(void)
 	struct insn *ar;
 	int w;
 
-	w = ropreg();
+	w = ropdreg();
 	if (tok_get() == INSTR) {
 		ar = (void *)yylval.hdr;
 		if (ar->class == A_SKPARG)
 			w |= ar->opcode;
 	} else
 		error("skip: missing conditional");
-	w |= ropreg();
+	w |= ropsreg();
 	return w;
 }
 
@@ -178,7 +193,7 @@ p1_instr(struct insn *ir)
 {
 	struct insn *ar;
 	struct expr *e;
-	int w = 0;
+	int w = 0, i;
 
 	switch (ir->class) {
 	case A_EA:
@@ -200,8 +215,8 @@ badid:			error("bad ident level");
 
 	case A_ROP:
 		w = roparg();
-		w |= ropreg();
-		w |= ropreg();
+		w |= ropsreg();
+		w |= ropdreg();
 		break;
 
 	case A_SHFT:
@@ -233,6 +248,20 @@ badid:			error("bad ident level");
 			error("argument out of bounds");
 		if (ir->class == A_PMRW)
 			w <<= 3; /* delta is in bit 3-5 */
+		break;
+
+	case A_BSKP:
+		if ((tok_get() != INSTR) ||
+		   (ar = (void *)yylval.hdr)->class != A_BSKPARG)
+			error("bad arg");
+		else
+			w = ar->opcode;
+		/* FALLTHROUGH */
+	case A_OBA:
+		if ((i = absval(p1_rdexpr())) & ~0170)
+			error("bit number out of bounds");
+		w |= i;
+		w |= ropdreg();
 		break;
 
 	default:
@@ -365,6 +394,8 @@ p2_instr(struct insn *in)
 	case A_NOARG:
 		break;
 
+	case A_BSKP:
+	case A_OBA:
 	case A_MOVEW:
 	case A_PMRW:
 	case A_IOX:
