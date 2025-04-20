@@ -171,16 +171,23 @@ static int
 skparg(void)
 {
 	struct insn *ar;
-	int w;
+	int w, n;
 
-	w = ropdreg();
+	w = 0;
+	if ((n = nextch()) != '0') {
+		tok_unput(n);
+		w = ropdreg();
+	}
 	if (tok_get() == INSTR) {
 		ar = (void *)yylval.hdr;
 		if (ar->class == A_SKPARG)
 			w |= ar->opcode;
 	} else
 		error("skip: missing conditional");
-	w |= ropsreg();
+	if ((n = nextch()) != '0') {
+		tok_unput(n);
+		w |= ropdreg();
+	}
 	return w;
 }
 

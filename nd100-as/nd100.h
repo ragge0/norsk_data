@@ -30,7 +30,7 @@
 #define	MD_MAXPSZ	2	/* # bytes per pointer, also the
 				   largest address size */
 #define	MD_AOUT16		/* 16-bit a.out format */
-
+#define	MD_BYTE_LTOR
 #undef DIR_INT
 #define	DIR_INT		4
 
