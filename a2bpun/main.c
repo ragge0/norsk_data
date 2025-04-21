@@ -112,11 +112,10 @@ wrfile(void)
 	putw(0, ofd);
 
 	/* 42 + CRLF for B */
-	putw(('4' << 8) | '2', ofd);
-	putw(('\r' << 8) | '\n', ofd);
+	fprintf(ofd, "%o\r\n", 042);
 
-	/* Start address for C */
-	wrwd(entry);
+	/* Start address for C (as octal numbers) */
+	fprintf(ofd, "%o", entry);
 
 	/* ! == D */
 	fputc('!', ofd);
