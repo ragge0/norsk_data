@@ -31,8 +31,8 @@
 #include "as.h"
 
 enum { A_EA = 1, A_NOARG, A_ROP, A_ROPARG, A_ROPSREG, A_ROPDREG,
-	A_SHFT, A_SHFTARG, A_SHFTR, A_FCONV, A_OFF,
-	A_SKP, A_SKPARG, A_IDENT, A_IDARG, A_IOX,
+	A_SHFT, A_SHFTARG, A_SHFTR, A_FCONV, A_OFF, A_IRARG,
+	A_SKP, A_SKPARG, A_IDENT, A_IDARG, A_IOX, A_TRARG,
 	A_PMRW, A_MOVEW, A_BSKP, A_BSKPARG, A_OBA  };
 
 #define OPC(x,y,z)	{ HDRNAM(x), y, z },
@@ -81,10 +81,18 @@ eaopt(void)
 	int rv, n;
 
 	rv = getcm();
-	if ((n = nextch()) == 'i')
-		rv |= 001000;
-	else
+	if ((n = nextch()) == 'i') {
+		n = tok_input();
+		if (n == ' ' || n == '\t' || n == ',') {
+			tok_unput(n);
+			rv |= 001000;	/* is indirect */
+		} else {
+			tok_unput(n);
+			tok_unput('i');
+		}
+	} else {
 		tok_unput(n);
+	}
 	rv |= getcm();
 	return rv;
 }
@@ -257,6 +265,19 @@ badid:			error("bad ident level");
 			w <<= 3; /* delta is in bit 3-5 */
 		break;
 
+	case A_IRARG:
+		w = absval(p1_rdexpr());
+		if (w & ~0170)
+			error("level out of bounds");
+		w |= ropdreg();
+		break;
+
+	case A_TRARG:
+		w = absval(p1_rdexpr());
+		if (w > 017 || w < 0)
+			error("argument out of bounds");
+		break;
+
 	case A_BSKP:
 		if ((tok_get() != INSTR) ||
 		   (ar = (void *)yylval.hdr)->class != A_BSKPARG)
@@ -401,6 +422,8 @@ p2_instr(struct insn *in)
 	case A_NOARG:
 		break;
 
+	case A_TRARG:
+	case A_IRARG:
 	case A_BSKP:
 	case A_OBA:
 	case A_MOVEW:
