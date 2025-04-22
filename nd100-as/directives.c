@@ -29,8 +29,8 @@
 
 #include "as.h"
 
-static void readidn(struct hshhdr **h, struct expr **ep);
 static void wrvalue(struct direc *d);
+static struct hshhdr *readsym(void);
 
 #ifdef MD_WORD_ADDR
 static void incdot(int type);
@@ -95,9 +95,7 @@ p1_direc(struct direc *d)
 			tmpwri(h->num);
 			e = p1_rdexpr();
 			p1_wrexpr(e);
-//printf("DOTBWLQ: dot %d\n", cdot);
 			incdot(d->type);
-//printf("DOTBWLQ2: dot %d\n", cdot);
 		} while ((n = tok_get()) == ',');
 		tok_unget(n);
 		break;
@@ -112,6 +110,11 @@ p1_direc(struct direc *d)
 		}
 		break;
 
+	case DOTGLOBL:
+		sp = (void *)readsym();
+		sp->flsdi |= SYM_GLOBAL;
+		break;
+
 	case DOTTDB:
 		n = 0;
 		if (tok_peek() != DELIM)
@@ -121,7 +124,9 @@ p1_direc(struct direc *d)
 
 	case DOTIDN:
 		/* .set/.comm/.lcomm */
-		readidn(&h2, &e);
+		h2 = readsym();
+		tok_acpt(',');
+		e = p1_rdexpr();
 		tmpwri(h->num);
 		tmpwri(h2->num);
 		if (d->type == IDN_SET) {
@@ -238,24 +243,20 @@ wrvalue(struct direc *d)
 }
 
 /*
- * Read an identifier, a ',' and an expression.
+ * Get a symbol and return it.
  */
-static void
-readidn(struct hshhdr **h, struct expr **ep)
+static struct hshhdr *
+readsym(void)
 {
+	struct hshhdr *hh;
 	int t;
 
-	if ((t = tok_get()) == DIREC || t == INSTR) {
-		yylval.hdr = symlookup(yylval.hdr->name, SYM_ID);
-		t = IDENT;
-	}
-	*h = yylval.hdr;
-	if (t != IDENT)
-		error("syntax error");
-	tok_acpt(',');
-	*ep = p1_rdexpr();
+	if ((t = tok_get()) == DIREC || t == INSTR)
+		hh = symlookup(yylval.hdr->name, SYM_ID);
+	else
+		hh = yylval.hdr;
+	return hh;
 }
-
 
 #if 0
 /*
