@@ -6,7 +6,7 @@
 CFLAGS = -g -Wall -Wmissing-prototypes -I../objdump
 DEST=as
 
-OBJS=	as.o directives.o nd100.o relocate.o aslex.o \
+OBJS=	as.o directives.o nd100.o relocate.o aslex.o delay.o \
 	segments.o symbol.o tempfile.o expr.o ofile.o aout16.o parse.o
 
 HDRS=	as.h nd100.h instr.h

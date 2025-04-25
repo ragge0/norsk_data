@@ -102,6 +102,7 @@ extern int md_byte_ltor;
 #define	HASHSZ	255	/* hash entries for name */
 #define	SYMCHSZ	128	/* symbol table alloc chunk size */
 #define STRBKSZ 1024	/* String block size, allocated when needed */
+#define	ASBUFSZ	1024	/* Common used buffers in the assembler */
 #define	OBUFSZ	1024	/* Output buffer sizes */
 
 #ifndef	DEFAULT_RADIX
@@ -398,3 +399,8 @@ void owbyte(int);
 void ow2byte(int);
 void ow4byte(long);
 void owwsz(int n, int ch);
+
+/* delay.c */
+extern int delay_waiting, delay_callme;
+void delay_save(int endc);
+void delay_reload(void);

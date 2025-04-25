@@ -206,13 +206,24 @@ skparg(void)
 void
 p1_instr(struct insn *ir)
 {
+	static int this_is_skip, this_was_skip, this_is_jmp;
 	struct insn *ar;
 	struct expr *e;
 	int w = 0, i;
 
+	if (this_is_skip) {
+		this_was_skip = 1;
+		this_is_skip = 0;
+	}
 	switch (ir->class) {
 	case A_EA:
+		if (ir->opcode == 0124000)
+			this_is_jmp = 1;
 		w = eaopt();
+		if ((i = nextch()) == '[') {
+			delay_save(']');
+		} else
+			tok_unput(i);
 		e = p1_rdexpr();
 		break;
 
@@ -247,6 +258,7 @@ badid:			error("bad ident level");
 		break;
 
 	case A_SKP:
+		this_is_skip = 1;
 		w = skparg();
 		break;
 
@@ -279,6 +291,8 @@ badid:			error("bad ident level");
 		break;
 
 	case A_BSKP:
+		if (ir->opcode == 0175000)
+			this_is_skip = 1;
 		if ((tok_get() != INSTR) ||
 		   (ar = (void *)yylval.hdr)->class != A_BSKPARG)
 			error("bad arg");
@@ -302,6 +316,10 @@ badid:			error("bad ident level");
 	if (ir->class == A_EA || ir->class == A_OFF)
 		p1_wrexpr(e);
 	cdot++;
+
+	if (delay_waiting && this_is_jmp && this_was_skip == 0)
+		delay_reload();
+	this_was_skip = this_is_jmp = 0;
 }
 
 /*
@@ -398,10 +416,9 @@ p2_instr(struct insn *in)
 			addreloc(ev->sp, 0, REL_UNDEXT);
 			/* FALLTHROUGH */
 		case EVT_ABS:
-			/* can only be zero page */
-			if (ev->val < 0 || ev->val > 0377)
+			val = (int16_t)ev->val;
+			if (val < -128 || val > 127)
 				error("expr value out of bounds");
-			val = ev->val;
 			break;
 		case EVT_SEG:
 			/* segment defined */
