@@ -27,12 +27,13 @@
 #include <stdio.h>
 #include <stddef.h>
 #include <string.h>
+#include <ctype.h>
 
 #include "as.h"
 
 enum { A_EA = 1, A_NOARG, A_ROP, A_ROPARG, A_ROPSREG, A_ROPDREG,
 	A_SHFT, A_SHFTARG, A_SHFTR, A_FCONV, A_OFF, A_IRARG,
-	A_SKP, A_SKPARG, A_IDENT, A_IDARG, A_IOX, A_TRARG,
+	A_SKP, A_SKPARG, A_IDENT, A_IDARG, A_IOX,  A_TRARG, A_TRREG,
 	A_PMRW, A_MOVEW, A_BSKP, A_BSKPARG, A_OBA  };
 
 #define OPC(x,y,z)	{ HDRNAM(x), y, z },
@@ -143,6 +144,41 @@ ropdreg(void)
 	return 0;
 }
 	
+
+static int
+int_reg(void)
+{
+	struct insn *ar;
+	int n;
+	
+	int tok;
+
+	switch(tok = tok_get())
+	{
+		case INSTR:
+			ar = (void *)yylval.hdr;
+			if (ar->class == A_TRREG)
+			{
+				n = ar->opcode;
+			}
+			else
+			{
+				error("unexpected instruction class %d (expected %d)", ar->class,A_TRREG);
+			}
+			break;
+		case NUMBER:
+			n = absval(p1_rdexpr());
+			break;
+
+		default:
+			error("unexpected token %d", tok);
+			break;		
+	}
+
+	return n;
+}
+	
+
 static int
 shftarg(void)
 {
@@ -285,9 +321,11 @@ badid:			error("bad ident level");
 		break;
 
 	case A_TRARG:
-		w = absval(p1_rdexpr());
+		w = int_reg();			
+			/* Validate register value range */
 		if (w > 017 || w < 0)
-			error("argument out of bounds");
+			error("register value out of bounds (0-17 octal)");
+		
 		break;
 
 	case A_BSKP:
