@@ -146,35 +146,29 @@ ropdreg(void)
 	
 
 static int
-int_reg(void)
+tr_reg(void)
 {
 	struct insn *ar;
-	int n;
-	
-	int tok;
+	int n, tok;
 
-	switch(tok = tok_get())
-	{
-		case INSTR:
-			ar = (void *)yylval.hdr;
-			if (ar->class == A_TRREG)
-			{
-				n = ar->opcode;
-			}
-			else
-			{
-				error("unexpected instruction class %d (expected %d)", ar->class,A_TRREG);
-			}
-			break;
-		case NUMBER:
-			n = absval(p1_rdexpr());
-			break;
+	n = 0; /* avoid bad values if error */
+	switch ((tok = tok_get())) {
+	case INSTR:
+		ar = (void *)yylval.hdr;
+		if (ar->class == A_TRREG)
+			n = ar->opcode;
+		else
+			error("unexpected instruction class %d "
+			    "(expected %d)", ar->class, A_TRREG);
+		break;
 
-		default:
-			error("unexpected token %d", tok);
-			break;		
+	case NUMBER:
+		n = absval(p1_rdexpr());
+		break;
+
+	default:
+		error("unexpected token %d", tok);
 	}
-
 	return n;
 }
 	
@@ -321,11 +315,10 @@ badid:			error("bad ident level");
 		break;
 
 	case A_TRARG:
-		w = int_reg();			
+		w = tr_reg();			
 			/* Validate register value range */
 		if (w > 017 || w < 0)
 			error("register value out of bounds (0-17 octal)");
-		
 		break;
 
 	case A_BSKP:
