@@ -56,9 +56,12 @@ owrite()
 	while ((ch = tmprd()) != EOF || !tmpeof()) {
 		if (ch > INSNBASE+ninsn)
 			aerror("tempfile sync error");
-		if (ch >= INSNBASE)
+		if (ch >= INSNBASE) {
 			p2_instr(&insn[ch-INSNBASE]);
-		else if (ch >= DIRBASE)
+			if (mapflag)
+				fprintf(mapfd, "%s:%d -> %06o\n",
+				    cinfile, lineno, cdot);
+		} else if (ch >= DIRBASE)
 			p2_direc(&direc[ch-DIRBASE]);
 		else switch (ch) {
 		case DOTSEGMENT:
@@ -68,9 +71,6 @@ owrite()
 
 		case LINENO:
 			lineno = tmprd();
-			if (mapflag)
-				fprintf(mapfd, "%s:%d -> %06o\n",
-				    cinfile, lineno, cdot);
 			break;
 
 		case FILENM:
