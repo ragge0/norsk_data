@@ -322,6 +322,7 @@ struct hshhdr *symlookup(char *s, int t);
 #define	SYM_DIR	2
 char *strsave(char *);
 char *symname(int);
+void serror(char *, int);
 
 /* segments.c */
 extern int segcnt;

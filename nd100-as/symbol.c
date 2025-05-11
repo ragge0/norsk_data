@@ -121,6 +121,24 @@ symname(int n)
 	return c;
 }
 
+void
+serror(char *u, int t)
+{
+	char *c, *n = symname(t);
+
+	c = NULL;
+	if (t < DIRBASE && t > 255) {
+		switch (t) {
+		case STRING:
+			c = yylval.str;
+			break;
+		default:
+			break;
+		}
+	}
+	error("%s: '%s'%s%s", u, n, c ? ": " : "", c ? c : "");
+}
+
 /*
  * Search for a symbol.  If not found, create a new entry and return.
  */

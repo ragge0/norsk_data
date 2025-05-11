@@ -62,10 +62,10 @@ parse(void)
 			break;
 
 		default:
-			error("unexpected command '%s'", symname(t));
+			serror("expected command, got", t);
 		}
 		if ((t = tok_get()) != DELIM)
-			error("junk '%s' after statement", symname(t));
+			serror("junk after statement", t);
 		lninc(yylval.val);
 	}
 }
