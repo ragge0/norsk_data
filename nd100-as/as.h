@@ -36,13 +36,16 @@
  *		(== what the arguments look like).
  */
 struct hshhdr {
-	struct hshhdr *next;
+	union {
+		struct hshhdr *next;
+		int val;
+	};
 	char *name;	/* Symbol name */
 	int num;	/* Symbol number */
 };
 #define	hname	hhdr.name
 #define	hnum	hhdr.num
-#define	HDRNAM(x)	{ NULL, x, 0 }
+#define	HDRNAM(x)	{ { NULL }, x, 0 }
 
 /* Default sizes (in bytes) of the initialize directives.
    May be changed by target */
@@ -129,14 +132,13 @@ struct symbol {
 	mdptr_t val;		/* symbol address, or 0 */
 	struct subseg *sub;	/* subseg this symbol belongs to, or NULL */
 	int flsdi;		/* Flags & preceding SDIs */
-#define	S_SETSDI(sp, s)	(sp->flsdi = ((s) << 2) | (sp->flsdi & 3))
-#define	S_SDI(sp)	(sp->flsdi >> 2)
-//	int flags;		/* symbol-specific flags */
-//	int precsdi;		/* # of preceding SDIs */
+#define	S_SETSDI(sp, s)	(sp->flsdi = ((s) << 3) | (sp->flsdi & 7))
+#define	S_SDI(sp)	(sp->flsdi >> 3)
 };
 /* flags */
 #define	SYM_DEFINED	1
 #define	SYM_GLOBAL	2
+#define	SYM_STABS	4
 
 /*
  * Directive definitions.
@@ -323,6 +325,7 @@ struct hshhdr *symlookup(char *s, int t);
 char *strsave(char *);
 char *symname(int);
 void serror(char *, int);
+struct symbol *symstabs(char *s);
 
 /* segments.c */
 extern int segcnt;
@@ -393,6 +396,7 @@ void aoutsetup(void);
 void aoutwrite(void);
 void aoutwrel(void);
 void aoutwsym(void);
+void aoutstabs(struct symbol *, int, int, int, mdptr_t);
 
 /* ofile.c */
 void owrite(void);

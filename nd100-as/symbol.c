@@ -132,6 +132,9 @@ serror(char *u, int t)
 		case STRING:
 			c = yylval.str;
 			break;
+		case IDENT:
+			c = yylval.hdr->name;
+			break;
 		default:
 			break;
 		}
@@ -181,6 +184,22 @@ next_symbol()
 	if (symary[symp] == NULL)
 		symary[symp] = xmalloc(sizeof(struct symbol) * SYMCHSZ);
 	return &symary[symp][symn];
+}
+
+/*
+ * Save a stabs entry in the symbol table.
+ * Not added to the hash table.
+ */
+struct symbol *
+symstabs(char *s)
+{
+	struct symbol *sp = next_symbol();
+
+	sp->hname = s;
+	sp->hnum = nextsym++ + SYMBASE;
+	sp->hhdr.next = NULL;
+	sp->flsdi = SYM_STABS;
+	return sp;
 }
 
 static int

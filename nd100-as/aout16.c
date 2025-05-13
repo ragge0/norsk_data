@@ -243,7 +243,7 @@ aoutwrel()
 void
 aoutwsym()
 {
-	char strbuf[OBUFSZ];
+	char strbuf[OBUFSZ], lnobuf[10];
 	struct symbol *sp;
 	long strboff;
 	int i, ws, strpos;
@@ -253,9 +253,17 @@ aoutwsym()
 	strpos = 4;
 
 	for (i = 0; i < nextsym; i++) {
-		sp = SYMGET(i);
-		ow4byte(strpos);
 		ws = N_EXT;	/* Mark as undefined externals */
+		sp = SYMGET(i);
+		if (sp->flsdi & SYM_STABS) {
+			if (S_SDI(sp) == 0x44) { /* N_SLINE */
+				/* line number must be stored in strings */
+				sprintf(lnobuf, "%d", sp->hhdr.val);
+				sp->hname = lnobuf;
+			}
+			ws = S_SDI(sp) | (sp->hhdr.val << 8);
+		}
+		ow4byte(strpos);
 		if (sp->flsdi & SYM_DEFINED) {
 			ws = N_ABS;
 			if (sp->sub) {
@@ -298,5 +306,19 @@ aoutwsym()
 	fwrite(strbuf, strpos, 1, ofd);
 	fseek(ofd, off_str, SEEK_SET);
 	ow4byte(strboff+strpos-off_str);
+}
+
+/*
+ * Store the (target-dependent) stabs info for future printout.
+ */
+void
+aoutstabs(struct symbol *sp, int type, int other, int desc, mdptr_t val)
+{
+	sp->val = val;
+	S_SETSDI(sp, type); /* unused field in this symbol */
+	sp->hhdr.val = desc;
+	if (other != 0)	/* sanity check */
+		aerror("aoutstabs: other != 0");
+	/* line number (as used in N_SLINE) must be stored in string */
 }
 #endif /* MD_AOUT16 */

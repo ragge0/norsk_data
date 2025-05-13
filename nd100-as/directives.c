@@ -40,7 +40,7 @@ static void incdot(int type);
 
 /* classes of directives */
 enum { DOTTDB, DOTBWLQ, DOTIDN, DOTGLOBL, DOTFILL, DOTEE,
-	DOTALIGN, DOTASCII };
+	DOTALIGN, DOTASCII, DOTSTABS };
 
 /* dir-specific defines */ 
 #define IDN_COMM	0
@@ -50,6 +50,9 @@ enum { DOTTDB, DOTBWLQ, DOTIDN, DOTGLOBL, DOTFILL, DOTEE,
 #define EE_ORG		1
 #define EE_ALIGN	2
 #define ASCIZ		1
+#define	STAB_S		0
+#define	STAB_N		1
+#define	STAB_D		2
 
 struct direc direc[] = {
 	{ HDRNAM(".text"), DOTTDB, SEG_TEXT },
@@ -74,6 +77,10 @@ struct direc direc[] = {
 	{ HDRNAM(".fill"), DOTFILL, 0 },
 	{ HDRNAM(".ascii"), DOTASCII, 0 },
 	{ HDRNAM(".asciz"), DOTASCII, ASCIZ },
+
+	{ HDRNAM(".stabs"), DOTSTABS, STAB_S },
+	{ HDRNAM(".stabn"), DOTSTABS, STAB_N },
+	{ HDRNAM(".stabd"), DOTSTABS, STAB_D },
 };
 int ndirec = sizeof(direc) / sizeof(direc[0]);
 
@@ -86,7 +93,8 @@ p1_direc(struct direc *d)
 	struct symbol *sp;
 	struct hshhdr *h, *h2;
 	struct expr *e;
-	int n, n2;
+	int n, n2, i;
+	char *c;
 
 	h = &d->hhdr;
 	switch (d->class) {
@@ -113,6 +121,29 @@ p1_direc(struct direc *d)
 	case DOTGLOBL:
 		sp = (void *)readsym();
 		sp->flsdi |= SYM_GLOBAL;
+		break;
+
+	case DOTSTABS:
+		tmpwri(h->num);
+		c = NULL;
+		if (d->type == STAB_S) {
+			tok_acpt(STRING);
+			c = strsave(yylval.str);
+			tok_acpt(',');
+		}
+		sp = symstabs(c);
+		tmpwri(sp->hnum);
+		for (i = 0; i < 3; i++) {
+			tok_acpt(NUMBER);
+			tmpwri(yylval.val);
+			if (i != 2)
+				tok_acpt(',');
+		}
+
+		if (d->type != STAB_D) {
+			tok_acpt(',');
+			p1_wrexpr(p1_rdexpr());
+		}
 		break;
 
 	case DOTTDB:
@@ -169,7 +200,7 @@ p2_direc(struct direc *d)
 {
 	void (*wrsz)(int);
 	struct symbol *sp;
-	int n, n2;
+	int n, n2, n3, val;
 
 	wrsz = MD_NBPWD == 1 ? owbyte : ow2byte;
 	switch (d->class) {
@@ -198,6 +229,25 @@ p2_direc(struct direc *d)
 			sp->val = absval(p2_rdexpr());
 		} else
 			error("p2_direc: DOTIDN");
+		break;
+
+	case DOTSTABS:
+		sp = (struct symbol *)symget(tmprd());
+		n = tmprd();	/* type */
+		n2 = tmprd();	/* other */
+		n3 = tmprd();	/* desc */
+		val = cdot;
+		if (d->type != STAB_D) {
+			struct eval evv;
+			int type = expres(&evv, p2_rdexpr());
+			if (type == EVT_ABS)
+				val = evv.val;
+			else if (type == EVT_SEG)
+				val = evv.sp->val;
+			else
+				error("bad stabs type");
+		}
+		aoutstabs(sp, n, n2, n3, val);
 		break;
 
 	default:
